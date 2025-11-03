@@ -170,6 +170,7 @@ async function main() {
   if (PORT) {
     const app = express();
     app.use(cors());
+    app.use(express.json());
     
     app.get("/sse", async (req, res) => {
       console.log("SSE connection established");
@@ -178,12 +179,14 @@ async function main() {
     });
 
     app.post("/message", async (req, res) => {
-      console.log("Received message");
+      console.log("Received message:", req.body);
+      // SSE transport handles messages internally
       res.status(200).end();
     });
 
     app.listen(PORT, () => {
       console.log(`MCP Server running on port ${PORT}`);
+      console.log(`SSE endpoint available at http://localhost:${PORT}/sse`);
     });
   } else {
     // Otherwise use stdio transport (for local/desktop use)
