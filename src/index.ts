@@ -2,6 +2,7 @@
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -10,6 +11,8 @@ import { RequestPayloadSchema } from "./types.js";
 import { Fetcher } from "./Fetcher.js";
 import process from "process";
 import { downloadLimit } from "./types.js";
+import express from "express";
+import cors from "cors";
 
 const server = new Server(
   {
@@ -161,8 +164,32 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+  const PORT = process.env.PORT ? parseInt(process.env.PORT) : null;
+  
+  // If PORT is set, use HTTP/SSE transport (for Render.com/agent-kit)
+  if (PORT) {
+    const app = express();
+    app.use(cors());
+    
+    app.get("/sse", async (req, res) => {
+      console.log("SSE connection established");
+      const transport = new SSEServerTransport("/message", res);
+      await server.connect(transport);
+    });
+
+    app.post("/message", async (req, res) => {
+      console.log("Received message");
+      res.status(200).end();
+    });
+
+    app.listen(PORT, () => {
+      console.log(`MCP Server running on port ${PORT}`);
+    });
+  } else {
+    // Otherwise use stdio transport (for local/desktop use)
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+  }
 }
 
 main().catch((error) => {
