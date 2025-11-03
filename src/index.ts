@@ -14,20 +14,21 @@ import { downloadLimit } from "./types.js";
 import express from "express";
 import cors from "cors";
 
-const server = new Server(
-  {
-    name: "zcaceres/fetch",
-    version: "0.1.0",
-  },
-  {
-    capabilities: {
-      resources: {},
-      tools: {},
+function createServer() {
+  const server = new Server(
+    {
+      name: "zcaceres/fetch",
+      version: "0.1.0",
     },
-  },
-);
+    {
+      capabilities: {
+        resources: {},
+        tools: {},
+      },
+    },
+  );
 
-server.setRequestHandler(ListToolsRequestSchema, async () => {
+  server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
       {
@@ -163,6 +164,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   throw new Error("Tool not found");
 });
 
+  return server;
+}
+
 async function main() {
   const PORT = process.env.PORT ? parseInt(process.env.PORT) : null;
   
@@ -174,13 +178,13 @@ async function main() {
     
     app.get("/sse", async (req, res) => {
       console.log("SSE connection established");
+      const server = createServer();
       const transport = new SSEServerTransport("/message", res);
       await server.connect(transport);
     });
 
     app.post("/message", async (req, res) => {
       console.log("Received message:", req.body);
-      // SSE transport handles messages internally
       res.status(200).end();
     });
 
@@ -190,6 +194,7 @@ async function main() {
     });
   } else {
     // Otherwise use stdio transport (for local/desktop use)
+    const server = createServer();
     const transport = new StdioServerTransport();
     await server.connect(transport);
   }
