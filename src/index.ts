@@ -14,6 +14,8 @@ import { downloadLimit } from "./types.js";
 import express from "express";
 import cors from "cors";
 
+type TransportMap = Map<string, SSEServerTransport>;
+
 function createServer() {
   const server = new Server(
     {
@@ -175,30 +177,51 @@ async function main() {
     const app = express();
     app.use(cors());
     app.use(express.json());
-    
-    // Store active transport for message handling
-    let activeTransport: any = null;
-    
+  const transports: TransportMap = new Map();
+
     app.get("/sse", async (req, res) => {
-      console.log("SSE connection established");
-      const server = createServer();
-      const transport = new SSEServerTransport("/message", res);
-      activeTransport = transport;
-      
-      await server.connect(transport);
-      
-      req.on("close", () => {
-        console.log("SSE connection closed");
-        activeTransport = null;
-      });
+      console.log("[MCP] Incoming SSE connection");
+      try {
+        const server = createServer();
+        const transport = new SSEServerTransport("/message", res);
+        const sessionId = transport.sessionId;
+        transports.set(sessionId, transport);
+
+        transport.onclose = () => {
+          console.log(`[MCP] SSE connection closed: ${sessionId}`);
+          transports.delete(sessionId);
+        };
+
+        await server.connect(transport);
+        console.log(`[MCP] SSE connection established: ${sessionId}`);
+      } catch (error) {
+        console.error("[MCP] Failed to establish SSE connection", error);
+        if (!res.headersSent) {
+          res.status(500).send("Failed to establish SSE connection");
+        }
+      }
     });
-    
+
     app.post("/message", async (req, res) => {
-      console.log("Received message:", JSON.stringify(req.body).substring(0, 100));
-      if (activeTransport && activeTransport.handlePostMessage) {
-        await activeTransport.handlePostMessage(req, res);
-      } else {
-        res.status(200).json({ ok: true });
+      const sessionId = typeof req.query.sessionId === "string" ? req.query.sessionId : undefined;
+      if (!sessionId) {
+        res.status(400).send("Missing sessionId parameter");
+        return;
+      }
+
+      const transport = transports.get(sessionId);
+      if (!transport) {
+        res.status(404).send("Session not found");
+        return;
+      }
+
+      try {
+        await transport.handlePostMessage(req, res, req.body);
+      } catch (error) {
+        console.error(`[MCP] Error handling message for session ${sessionId}`, error);
+        if (!res.headersSent) {
+          res.status(500).send("Error handling message");
+        }
       }
     });
 
