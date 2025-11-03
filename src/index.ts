@@ -179,6 +179,14 @@ async function main() {
     app.use(express.json());
   const transports: TransportMap = new Map();
 
+    app.get("/", (_req, res) => {
+      res.status(200).send("Fetch MCP server is running");
+    });
+
+    app.get("/healthz", (_req, res) => {
+      res.status(200).json({ status: "ok" });
+    });
+
     app.get("/sse", async (req, res) => {
       console.log("[MCP] Incoming SSE connection");
       try {
