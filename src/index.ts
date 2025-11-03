@@ -176,16 +176,30 @@ async function main() {
     app.use(cors());
     app.use(express.json());
     
+    // Store active transport for message handling
+    let activeTransport: any = null;
+    
     app.get("/sse", async (req, res) => {
       console.log("SSE connection established");
       const server = createServer();
       const transport = new SSEServerTransport("/message", res);
+      activeTransport = transport;
+      
       await server.connect(transport);
+      
+      req.on("close", () => {
+        console.log("SSE connection closed");
+        activeTransport = null;
+      });
     });
-
+    
     app.post("/message", async (req, res) => {
-      console.log("Received message:", req.body);
-      res.status(200).end();
+      console.log("Received message:", JSON.stringify(req.body).substring(0, 100));
+      if (activeTransport && activeTransport.handlePostMessage) {
+        await activeTransport.handlePostMessage(req, res);
+      } else {
+        res.status(200).json({ ok: true });
+      }
     });
 
     app.listen(PORT, () => {
