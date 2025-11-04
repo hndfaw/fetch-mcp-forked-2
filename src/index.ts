@@ -46,14 +46,19 @@ function createServer() {
             headers: {
               type: "object",
               description: "Optional headers to include in the request",
+              default: {},
             },
             max_length: {
               type: "number",
               description: `Maximum number of characters to return (default: ${downloadLimit})`,
+              default: downloadLimit,
+              minimum: 0,
             },
             start_index: {
               type: "number",
               description: "Start content from this character index (default: 0)",
+              default: 0,
+              minimum: 0,
             },
           },
           required: ["url"],
@@ -72,14 +77,19 @@ function createServer() {
             headers: {
               type: "object",
               description: "Optional headers to include in the request",
+              default: {},
             },
             max_length: {
               type: "number",
-              description: `Maximum number of characters to return (default: ${downloadLimit}})`,
+              description: `Maximum number of characters to return (default: ${downloadLimit})`,
+              default: downloadLimit,
+              minimum: 0,
             },
             start_index: {
               type: "number",
               description: "Start content from this character index (default: 0)",
+              default: 0,
+              minimum: 0,
             },
           },
           required: ["url"],
@@ -99,14 +109,19 @@ function createServer() {
             headers: {
               type: "object",
               description: "Optional headers to include in the request",
+              default: {},
             },
             max_length: {
               type: "number",
               description: `Maximum number of characters to return (default: ${downloadLimit})`,
+              default: downloadLimit,
+              minimum: 0,
             },
             start_index: {
               type: "number",
               description: "Start content from this character index (default: 0)",
+              default: 0,
+              minimum: 0,
             },
           },
           required: ["url"],
@@ -125,14 +140,19 @@ function createServer() {
             headers: {
               type: "object",
               description: "Optional headers to include in the request",
+              default: {},
             },
             max_length: {
               type: "number",
               description: `Maximum number of characters to return (default: ${downloadLimit})`,
+              default: downloadLimit,
+              minimum: 0,
             },
             start_index: {
               type: "number",
               description: "Start content from this character index (default: 0)",
+              default: 0,
+              minimum: 0,
             },
           },
           required: ["url"],
